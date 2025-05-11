@@ -1,0 +1,85 @@
+# specs/uncertainty‑os.yml     (OpenAPI 3.1 stub – v0.1‑alpha)
+
+openapi: 3.1.0
+info:
+  title: Uncertainty‑OS Kernel API
+  version: 0.1‑alpha
+  description: Core endpoints a scenario pack uses to create agents, inject shocks, record learner decisions, and return telemetry.
+servers:
+  - url: https://{tenant}.uos.ai
+    variables:
+      tenant:
+        default: demo
+paths:
+  /scenario:
+    post:
+      summary: Register scenario metadata and initial world‑state
+      requestBody:
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ScenarioInit' }
+      responses:
+        '201': { description: Scenario created }
+  /agent:
+    post:
+      summary: Spawn firm‑ or NPC‑agent
+      requestBody:
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/AgentInit' }
+      responses:
+        '201': { description: Agent created }
+  /tick:
+    post:
+      summary: Advance simulation clock by one timestep
+      parameters:
+        - in: query
+          name: scenario_id
+          schema: { type: string }
+      requestBody:
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ShockBundle' }
+      responses:
+        '200':
+          description: World‑state delta
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/WorldDiff' }
+  /decision:
+    post:
+      summary: Record learner decision for current tick
+      requestBody:
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/Decision' }
+      responses:
+        '200': { description: Decision accepted }
+
+components:
+  schemas:
+    ScenarioInit:
+      type: object
+      required: [name, agents, parameters, time_horizon]
+      properties:
+        name: { type: string }
+        description: { type: string }
+        parameters: { type: object }
+        agents:
+          type: array
+          items: { $ref: '#/components/schemas/AgentInit' }
+        time_horizon: { type: integer, minimum: 1 }
+    AgentInit:
+      type: object
+      required: [agent_type, params]
+      properties:
+        agent_type: { enum: [FIRM, INVESTOR_NPC, MENTOR_NPC] }
+        params: { type: object }
+    ShockBundle: { type: object }
+    Decision:
+      type: object
+      required: [learner_id, action]
+      properties:
+        learner_id: { type: string }
+        action: { type: string }
+    WorldDiff: { type: object }
